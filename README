@@ -1,0 +1,135 @@
+meta-sysinfo
+============
+
+A Yocto layer that packages the `mcsysteminfo` system information utility.
+
+The layer contains a single real recipe, `mcsysteminfo`, which is a worked
+example of a CMake based application recipe: it fetches the sources from a
+git repository, cross compiles them with CMake, splits the result into a
+runtime and a development package, installs a systemd service and ships a
+runtime test.
+
+Table of Contents
+=================
+
+  I. Adding the meta-sysinfo layer to your build
+ II. Building mcsysteminfo
+III. What the recipe does
+ IV. Using mcsysteminfo in an image
+  V. Dependencies
+ VI. Maintainer
+
+
+I. Adding the meta-sysinfo layer to your build
+==============================================
+
+Add the layer to your build with:
+
+    bitbake-layers add-layer /path/to/meta-sysinfo
+
+or, if the layer is already cloned next to poky:
+
+    bitbake-layers add-layer meta-sysinfo
+
+To remove it again:
+
+    bitbake-layers remove-layer meta-sysinfo
+
+
+II. Building mcsysteminfo
+=========================
+
+Build the binary package on its own:
+
+    bitbake mcsysteminfo
+
+The resulting packages are written to:
+
+    tmp/deploy/ipk/<machine>/mcsysteminfo_0.1.0_*.ipk
+    tmp/deploy/ipk/<machine>/mcsysteminfo-dev_0.1.0_*.ipk
+
+To pull the utility into an image, add it to the image recipe:
+
+    IMAGE_INSTALL:append = " mcsysteminfo"
+
+and rebuild the image.
+
+
+III. What the recipe does
+=========================
+
+Sources
+    The sources are fetched from
+    https://github.com/KostiantynBushko/mcsysteminfo at a pinned commit
+    (`SRCREV`). The version of the recipe and the version of the upstream
+    project are kept in sync.
+
+Build
+    `inherit cmake` drives the cross build. `EXTRA_OECMAKE` turns the unit
+    test on, `inherit pkgconfig` installs the `.pc` file.
+
+Packaging
+    `mcsysteminfo` contains the binary, the static library and the systemd
+    unit. `mcsysteminfo-dev` contains the headers, the pkg-config file and
+    the CMake package config.
+
+Systemd
+    `mcsysteminfo.service` is a oneshot service that writes a JSON inventory
+    of the system to `/var/lib/mcsysteminfo/report.json`. This is the
+    quickest way to find out which kernel, hardware and image a device
+    actually booted.
+
+    The service is installed but not started automatically, the
+    `mcsysteminfo_0.1.0.bbappend` in this layer sets
+    `SYSTEMD_AUTO_ENABLE:mcsysteminfo = "disable"`. A product layer that
+    wants the inventory on every boot enables it with:
+
+        SYSTEMD_AUTO_ENABLE:mcsysteminfo = "enable"
+
+    The service can always be started by hand on the target:
+
+        systemctl start mcsysteminfo.service
+
+Tests
+    The unit test is cross compiled together with the binary and installed
+    into the `mcsysteminfo-ptest` package. It is executed on the target by
+    the image runtime test framework, not on the build host. Add
+    `ptest` to `IMAGE_FEATURES` to enable runtime testing.
+
+
+IV. Using mcsysteminfo in an image
+==================================
+
+On the target:
+
+    mcsysteminfo              # human readable report
+    mcsysteminfo --json       # machine readable report
+    cat /var/lib/mcsysteminfo/report.json
+
+
+V. Dependencies
+===============
+
+  URI: https://git.yoctoproject.org/git/poky
+  branch: scarthgap
+
+  URI: https://github.com/KostiantynBushko/mcsysteminfo
+  branch: main
+
+The layer is compatible with the `scarthgap` series. Change
+`LAYERSERIES_COMPAT_meta-sysinfo` in `conf/layer.conf` when moving to a
+different release.
+
+A `systemd` based image is required for the boot time inventory. On an image
+without systemd, drop the `systemd` inheritance from the recipe.
+
+A full build needs a few gigabytes of free disk space for the toolchain, the
+build directory and the downloads.
+
+
+VI. Maintainer
+==============
+
+Konstyantyn Bushko <kostiantyn.bushko@gmail.com>
+
+Please submit patches to the meta-sysinfo layer to the maintainer.

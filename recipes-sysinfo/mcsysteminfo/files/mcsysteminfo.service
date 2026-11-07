@@ -1,0 +1,14 @@
+[Unit]
+Description=Capture a system information inventory
+Documentation=https://github.com/KostiantynBushko/mcsysteminfo
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mcsysteminfo --json
+StandardOutput=file:/var/lib/mcsysteminfo/report.json
+StateDirectory=mcsysteminfo
+StateDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target
