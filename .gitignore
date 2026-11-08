@@ -1,0 +1,8 @@
+# Agent workspace metadata
+.agentworkspace.json
+
+# Local build artefacts
+tmp/
+work/
+downloads/
+sstate-cache/
