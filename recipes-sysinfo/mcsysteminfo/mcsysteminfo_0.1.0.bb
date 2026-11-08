@@ -20,9 +20,9 @@ inherit cmake pkgconfig systemd ptest
 # Build the unit test as well, it is shipped in the ${PN}-ptest package.
 EXTRA_OECMAKE:append = " -DMCSYSTEMINFO_BUILD_TESTS=ON"
 
-# base-files provides /etc/hostname and /etc/hosts. /etc/machine-id is
-# optional, the tool reports an empty value when it is not present.
-RDEPENDS:${PN} += "base-files"
+# The tool has no hard runtime dependency: it reads the kernel interfaces and
+# /proc only. /etc/machine-id is reported when it is present, which is the
+# case on a systemd or dbus based image, and is left empty otherwise.
 
 # The boot time inventory is captured by the systemd service.
 SYSTEMD_SERVICE:${PN} += "mcsysteminfo.service"
